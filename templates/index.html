@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real Time Clock</title>
+    <script>
+        const eventSource = new EventSource("/stream");
+
+
+        eventSource.onmessage = function(event) {
+            document.getElementById("current-time").textContent = "Current Time: " + event.data;
+
+        };
+
+    </script>
+</head>
+<body>
+<h1 id="current-time">Current Time:</h1>
+</body>
+</html>
