@@ -3,11 +3,11 @@ import threading
 from flask import Flask, render_template, Response
 
 app = Flask(__name__)
-
+active_threads = threading.enumerate()
 # Глобальные переменные для хранения времени в разных форматах
 current_time = ""
 current_unix_time = 0
-
+count = 0
 # Функция, которая будет выполняться в первом потоке и обновлять current_time
 def update_current_time():
     global current_time
@@ -19,6 +19,8 @@ def update_current_time():
 def update_current_unix_time():
     global current_unix_time
     while True:
+        global count
+        count += 1
         current_unix_time = int(time.time())
         time.sleep(1)
 
@@ -29,19 +31,27 @@ thread_unix_time = threading.Thread(target=update_current_unix_time)
 thread_time.start()
 thread_unix_time.start()
 
+for thread in active_threads:
+    print(f"Thread Name: {thread.name}, Thread ID: {thread.ident}, Thread is Daemon: {thread.daemon}")
+
 @app.route('/stream')
 def home():
     def generate():
         while True:
-            yield f"data: {current_time}\ndata_unix: {current_unix_time}\n\n"
+            yield f"data: current_time: {current_time}\n\n"
+            yield f"data: current_unix_time: {current_unix_time}\n\n"
             time.sleep(1)
 
     return Response(generate(), content_type='text/event-stream')
+
 
 @app.route('/') # главная страница, маршрут,
 def index(): # Этот маршрут возвращает HTML-шаблон index.html при запросе к корневому пути ('/').
     return render_template('index.html')
 
 
+
+
 if __name__ == '__main__':
+
     app.run(debug=True)
