@@ -1,6 +1,10 @@
 import time
 import threading
 from flask import Flask, render_template, Response
+import ccxt.pro
+from asyncio import run, gather
+
+
 
 app = Flask(__name__)
 active_threads = threading.enumerate()
@@ -8,6 +12,29 @@ active_threads = threading.enumerate()
 current_time = ""
 current_unix_time = 0
 count = 0
+
+
+async def watch_order_book(exchange, symbol):
+    while True:
+        try:
+            orderbook = await exchange.watch_order_book(symbol)
+            datetime = exchange.iso8601(exchange.milliseconds())
+            print(datetime, orderbook['nonce'], symbol, orderbook['asks'][0], orderbook['bids'][0])
+        except Exception as e:
+            print(type(e).__name__, str(e))
+            break
+
+
+async def reload_markets(exchange, delay):
+    while True:
+        try:
+            await exchange.sleep(delay)
+            markets = await exchange.load_markets(True)
+            datetime = exchange.iso8601(exchange.milliseconds())
+            print(datetime, 'Markets reloaded')
+        except Exception as e:
+            print(type(e).__name__, str(e))
+            break
 # Функция, которая будет выполняться в первом потоке и обновлять current_time
 def update_current_time():
     global current_time
