@@ -2,7 +2,9 @@ import ccxt.pro
 import time
 import threading
 from flask import Flask, render_template, Response
+from Class_CryptoQuote import *
 import asyncio
+
 # import GetPrice
 
 DataList = ["Нет связи с биржей"]
@@ -28,9 +30,11 @@ async def watch_order_book(exchange = ccxt.pro.binance(), symbol = 'BTC/USDT'):
             # вызывает метод watch_order_book у объекта exchange, который отслеживает стакан ордеров для заданного symbol
             # ожидает появления новых данных от биржи, без блокировки.
             orderbook = await exchange.watch_order_book(symbol)
+            orderbook2 = await exchange.watch_order_book('ETH/USDT')
             # получает текущую дату и время с использованием метода iso8601 и milliseconds объекта exchange.
             datetime = exchange.iso8601(exchange.milliseconds())
-            DataList = (datetime, orderbook['nonce'], symbol, orderbook['asks'][0], orderbook['bids'][0])
+            DataList = (datetime, orderbook['nonce'], symbol, orderbook['asks'][0], orderbook['bids'][0],
+                        datetime, orderbook2['nonce'], 'ETH/USDT',orderbook2['asks'][0], orderbook2['bids'][0])
             print(DataList)
             # print("event")
         except Exception as e:
