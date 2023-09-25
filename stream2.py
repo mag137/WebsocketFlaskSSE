@@ -25,15 +25,13 @@ async def watch_order_book(exchange = ccxt.pro.binance(), symbol = 'BTC/USDT'):
         try:
             global DataList
             # Подписка
-            # вызывает метод watch_order_book у объекта exchange,
-            # который отслеживает стакан ордеров для заданного symbol
-            # Оператор await ожидает завершения этой операции, прежде чем перейти к следующей строке кода.
+            # вызывает метод watch_order_book у объекта exchange, который отслеживает стакан ордеров для заданного symbol
+            # ожидает появления новых данных от биржи, без блокировки.
             orderbook = await exchange.watch_order_book(symbol)
             # получает текущую дату и время с использованием метода iso8601 и milliseconds объекта exchange.
             datetime = exchange.iso8601(exchange.milliseconds())
             DataList = (datetime, orderbook['nonce'], symbol, orderbook['asks'][0], orderbook['bids'][0])
             print(DataList)
-            await asyncio.sleep(100/1000)
             # print("event")
         except Exception as e:
             print(type(e).__name__, str(e))
@@ -77,8 +75,8 @@ thread_time.start()
 thread_unix_time.start()
 thread_price.start()
 
-# for thread in active_threads:
-    # print(f"Thread Name: {thread.name}, Thread ID: {thread.ident}, Thread is Daemon: {thread.daemon}")
+for thread in active_threads:
+    print(f"Thread Name: {thread.name}, Thread ID: {thread.ident}, Thread is Daemon: {thread.daemon}")
 
 @app.route('/stream')
 def home():
@@ -87,7 +85,7 @@ def home():
             yield f"data: current_time: {current_time}\n\n"
             yield f"data: current_unix_time: {current_unix_time}\n\n"
             yield f"data: BTC: {DataList}\n\n"
-            time.sleep(1)
+            time.sleep(0.1)
 
     return Response(generate(), content_type='text/event-stream')
 
