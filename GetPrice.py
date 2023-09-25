@@ -1,12 +1,16 @@
-import ccxt.pro
 from asyncio import run, gather
+
+import ccxt.pro
+import asyncio
+
+
 
 
 
 DataList = []
 
 # Функция watch_order_book является асинхронной и используется для отслеживания стакана ордеров на бирже.
-async def watch_order_book(exchange, symbol):
+async def watch_order_book(exchange = ccxt.pro.binance(), symbol = 'BTC/USDT'):
     # Бесконечный цикл
     while True:
         try:
@@ -20,7 +24,8 @@ async def watch_order_book(exchange, symbol):
             datetime = exchange.iso8601(exchange.milliseconds())
             DataList = (datetime, orderbook['nonce'], symbol, orderbook['asks'][0], orderbook['bids'][0])
             print(DataList)
-            print("event")
+            await asyncio.sleep(1)
+            # print("event")
         except Exception as e:
             print(type(e).__name__, str(e))
             break
@@ -38,7 +43,8 @@ async def reload_markets(exchange, delay):#Передаем название б�
             # Оператор await ожидает завершения этой операции, прежде чем перейти к следующей строке кода.
             datetime = exchange.iso8601(exchange.milliseconds())
             # получает текущую дату и время с использованием метода iso8601 и milliseconds объекта exchange.
-            print(datetime, 'Markets reloaded')
+            # print(datetime, 'Markets reloaded')
+            await asyncio.sleep(1)
         except Exception as e:
             print(type(e).__name__, str(e))
             break
@@ -58,7 +64,7 @@ async def main():
     # создает список loops, содержащий две асинхронные функции: watch_order_book и reload_markets.
     # Эти функции будут выполняться параллельно.
     #print(delay)
-    loops = [watch_order_book(exchange, symbol), reload_markets(exchange, delay)]
+    loops = [watch_order_book(exchange, symbol)]#, reload_markets(exchange, delay)]
     # вызывает функцию gather для выполнения асинхронных функций из списка loops.
     # Это позволяет выполнять эти функции параллельно.
     #print(loops)
@@ -68,5 +74,6 @@ async def main():
 
     await exchange.close()
 
-
-run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
+print("GetPrice stopped because it is running in another application...")
