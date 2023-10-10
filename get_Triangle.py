@@ -79,13 +79,14 @@ def get_triangle(exchange, spot=True, log=False):  # Функция получе
                     triangle_dict[tri_name] = pair_dict
 
     duration_constructor_by_time = round((time.time() - current_unix_time)*1000, 2)
-    print('Пары в треугольниках', get_tri_only_pair)
-    print("Всего", len(get_all_pair_data_list), 'активных пар,состоящих из', len(get_all_symbols),
-          'неповторяющихся символов. Затрачено времени:', duration_get_market_by_time, 'мс')
+    if log:
+        print('Пары в треугольниках', get_tri_only_pair)
+        print("Всего", len(get_all_pair_data_list), 'активных пар,состоящих из', len(get_all_symbols),
+              'неповторяющихся символов. Затрачено времени:', duration_get_market_by_time, 'мс')
 
-    print('Количество пар в треугольниках', len(get_tri_only_pair))
-    print('Конструктор треугольников: количество:', len(triangle_dict),
-          ". Затрачено времени:", duration_constructor_by_time, "мс")
+        print('Количество пар в треугольниках', len(get_tri_only_pair))
+        print('Конструктор треугольников: количество:', len(triangle_dict),
+              ". Затрачено времени:", duration_constructor_by_time, "мс")
 
     return triangle_dict, get_tri_only_pair
 

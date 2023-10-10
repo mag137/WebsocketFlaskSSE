@@ -18,28 +18,18 @@ current_unix_time = 0
 count = 0
 
 
-
-
-# Функция watch_order_book является асинхронной и используется для отслеживания стакана ордеров на бирже.
 async def watch_order_book(exchange = ccxt.pro.binance(), symbol = 'BTC/USDT'):
     # Бесконечный цикл
     while True:
         try:
             global DataList
-            # Подписка
-            # вызывает метод watch_order_book у объекта exchange, который отслеживает стакан ордеров для заданного symbol
-            # ожидает появления новых данных от биржи, без блокировки.
-            markets = await exchange.fetch_markets()
-            for market in markets:
-                pass
-                # print(market['symbol'])
             orderbook = await exchange.watch_order_book(symbol)
             orderbook2 = await exchange.watch_order_book('ETH/USDT')
             # получает текущую дату и время с использованием метода iso8601 и milliseconds объекта exchange.
             datetime = exchange.iso8601(exchange.milliseconds())
             DataList = (datetime, orderbook['nonce'], symbol, orderbook['asks'][0], orderbook['bids'][0],
                         datetime, orderbook2['nonce'], 'ETH/USDT',orderbook2['asks'][0], orderbook2['bids'][0])
-            # print(DataList)
+            print(DataList)
             # print("event")
         except Exception as e:
             print(type(e).__name__, str(e))
