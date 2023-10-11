@@ -2,7 +2,7 @@ import ccxt as ccxt
 import time
 
 
-def get_triangle(exchange, spot=True, log=False):  # Функция получения всех инструментов, доступных на целевой бирже
+def get_triangle(exchange, spot=True, log=True):  # Функция получения всех инструментов, доступных на целевой бирже
     triangle_dict = {}  # Основной словарь для собираемых треугольников
     get_all_pair_data_list = []
     get_all_symbols = set()
@@ -80,6 +80,7 @@ def get_triangle(exchange, spot=True, log=False):  # Функция получе
 
     duration_constructor_by_time = round((time.time() - current_unix_time)*1000, 2)
     if log:
+        print('Биржа:', exchange)
         print('Пары в треугольниках', get_tri_only_pair)
         print("Всего", len(get_all_pair_data_list), 'активных пар,состоящих из', len(get_all_symbols),
               'неповторяющихся символов. Затрачено времени:', duration_get_market_by_time, 'мс')
