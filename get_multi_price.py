@@ -1,57 +1,34 @@
+# -*- coding: utf-8 -*-
+
 import ccxt.pro
-import asyncio
+from asyncio import gather, run
 import get_Triangle
-import time
 
-# Глобальный словарь для хранения значений
-data_dict = {}
-exchange = ccxt.pro.binance()
-triangle_dict, get_tri_only_pair = get_Triangle.get_triangle(exchange.id, True, True)
-
-
-def run_async_function():
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(start_multi_watch_order_book())
-    loop.close()
-
-
-async def start_multi_watch_order_book():
-    # Создание списка задач
-    tasks = [watch_order_book(exchange, pair) for pair in get_tri_only_pair]
-    tasks.append(PrintData())
-    # Запуск задач параллельно
-    await asyncio.gather(*tasks)
-    await exchange.close()
-
-async def watch_order_book(target_exchange=ccxt.pro.binance(), pair='BTC/USDT'):
-    # Бесконечный цикл
+async def symbol_loop(exchange, symbol):
+    print('Starting the', exchange.id, 'symbol loop with', symbol)
     while True:
         try:
-            global data_dict
-            orderbook = await target_exchange.watch_order_book(pair)
-            data_list = {
-                'symbol': orderbook['symbol'],
-                'nonce': orderbook['nonce'],
-                'ask': orderbook['asks'][0],
-                'bid': orderbook['bids'][0],
-                'datetime': orderbook['datetime'],
-                'timestamp': orderbook['timestamp']
-            }
-            data_dict[orderbook['symbol']] = data_list
-            # print(data_dict.keys())
+            orderbook = await exchange.watch_order_book(symbol)
+            now = exchange.milliseconds()
+            print(exchange.iso8601(now), exchange.id, symbol, orderbook['asks'][0], orderbook['bids'][0])
         except Exception as e:
-            print(type(e).__name__, str(e))
-            break
+            print(str(e))
+            # raise e  # uncomment to break all loops in case of an error in any one of them
+            break  # you can break just this one loop if it fails
 
+async def main():
 
-async def PrintData():
-    while True:
-        a = 'ETH/USDT'
-        if a in data_dict:
-            print(data_dict[a])
-        await asyncio.sleep(0.2)
+    symbols = ['KDA/USDT', 'KDA/BTC', 'BTC/USDT']
+    loops = [symbol_loop(exchange, symbol) for symbol in symbols]
+    await gather(*loops)
+    await exchange.close()
 
+exchange = ccxt.pro.kucoin({
+        "apiKey": "655e1149aa87b00001139c0d",
+        "secret": "2d445845-2ceb-4567-8b0b-bccb01926d81",
+        # "password": "190180",
+    })
+triangle_dict, get_tri_only_pair = get_Triangle.get_triangle(exchange.id, True, True)
+pair_list = list(get_tri_only_pair)
 
-# Запуск основной асинхронной функции
-asyncio.run(start_multi_watch_order_book())
+run(main())
