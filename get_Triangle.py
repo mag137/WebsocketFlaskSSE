@@ -25,8 +25,8 @@ def get_triangle(exchange, spot=True, log=True):  # Функция получе�
         '''get_all_pair_data_list - список всех данных пар рынка: id, symbol, baseId, quoteId'''
         '''Добавим условие - только спотовый рынок'''
         if market['active']:
-            if spot and market['type'] != 'spot':
-                continue
+            # if spot and market['type'] != 'spot':
+            #     continue
             get_all_pair_data_list.append([market['id'], market['symbol'], market['base'], market['quote'], market['precision'], market['limits']])
             '''Получим все неповторяющиеся символы с биржи'''
             get_all_symbols.add(market['base'])
