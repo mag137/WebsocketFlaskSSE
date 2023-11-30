@@ -1,107 +1,108 @@
 import ccxt as ccxt
 import time
+import os
+
+file_path = __file__
+file_name = os.path.basename(file_path)
+print("Имя текущего файла:", file_name)
 
 
-def get_triangle(exchange, spot=True, log=True):  # Функция получения всех инструментов, доступных на целевой бирже
-    triangle_dict = {}  # Основной словарь для собираемых треугольников
-    get_all_pair_data_list = []
-    get_all_symbols = set()
-    get_all_pairs = set()
-    get_tri_only_pair = set()
-    _exchange = getattr(ccxt, str(exchange))()  # Динамическое создание экземпляра биржи
+def get_triangle(exchange, spot=True, log=True, max_retries=3, retry_delay=1):  # Функция получения всех инструментов, доступных на целевой бирже
+    for _ in range(max_retries):
+        try:
+            triangle_dict           = {}    # Основной словарь для собираемых треугольников
+            get_all_pair_data_list  = []    # Список содержащий свойства одной пары рынка
+            get_all_symbols_set     = set() # Множество содержащее все доступные символы
+            get_all_pairs_list      = []    # Список содержащий все доступные пары
+            get_all_pairs_set       = set() # Множество содержащее все доступные пары
+            get_tri_only_pair_set   = set() # Множество содержащее пары только треугольников
+            _exchange = getattr(ccxt, str(exchange))()  # Динамическое создание экземпляра биржи
+            markets = _exchange.load_markets()  # Загрузка доступных рынков
+            current_unix_time = time.time()
+            count = 0
+            c1 = 0
+            pair_b = None  # Инициализация переменной pair_b
+            pair_c = None
+            for pair in markets:
+                market = markets[pair]
+                '''get_all_pair_data_list - список всех данных пар рынка: id, symbol, baseId, quoteId'''
+                '''Добавим условие - только спотовый рынок'''
+                if market['active']:
+                    if market['type'] != 'spot':
+                        continue
+                    '''Получение всех свойств одной пары рынка'''
+                    get_all_pair_data_list.append([market['id'], market['symbol'], market['base'], market['quote'], market['precision'], market['limits']])
+                    '''Получим все неповторяющиеся символы с биржи'''
+                    get_all_symbols_set.add(market['base'])
+                    get_all_symbols_set.add(market['quote'])
+                    '''Получим все неповторяющиеся пары с биржи'''
+                    get_all_pairs_set.add(market['symbol'])
+                    get_all_pairs_list = list(get_all_pairs_set)
+            for pair_a_data in get_all_pair_data_list: # Цикл по всем доступным парам. Берем любую доступную пару и ищем треугольник
+                for symbolC in get_all_symbols_set: # К пробной паре прикручиваем символ из доступных
+                    """Пробуем добавить к паре символ С"""
+                    if symbolC in pair_a_data:  # Если символ совпадает с символом пары, то пропускаем итерацию
+                        continue
+                    pair_a = pair_a_data[1]
+                    if (pair_a_data[3] + '/' + symbolC) in get_all_pairs_set:
+                        if (pair_a_data[2] + '/' + symbolC) in get_all_pairs_set:
+                            pair_b = (pair_a_data[3] + '/' + symbolC)
+                            pair_c = (pair_a_data[2] + '/' + symbolC)
+                            tri_assemble = pair_a_data[1] + '/' + symbolC
+                            count += 1
+                            pair_dict = {
+                                'PairA': pair_a,
+                                'PairB': pair_b,
+                                'PairC': pair_c,
+                                'Number': count
+                            }
+                            tri_name = str(count) + "-" + tri_assemble.replace("/", "-")
+                            # tri_name = tri_assemble.replace("/", "-")
+                            triangle_dict[tri_name] = pair_dict
+                    else:  # Если такой пары нет - пропускаем
+                        continue
+                    get_tri_only_pair_set.update([pair_a, pair_b, pair_c])
+            current_unix_time = time.time()
+            duration_constructor_by_time = round((time.time() - current_unix_time)*1000, 2)
+            if log:
+                print('Биржа:', exchange)
+                for key, value in triangle_dict.items():
+                    print(key.ljust(35), value, sep='\t')
+                print("Всего", len(get_all_pair_data_list), 'активных пар,состоящих из', len(get_all_symbols_set),
+                      'неповторяющихся символов.')
+                print('Количество пар в треугольниках', len(get_tri_only_pair_set))
+                print('Конструктор треугольников: количество:', len(triangle_dict),
+                      ". Затрачено времени:", duration_constructor_by_time, "мс")
 
-    markets = _exchange.load_markets()  # Загрузка доступных рынков
-    current_unix_time = time.time()
-    col = 0
-    pairB_F_count = 0
-    pairC_F_count = 0
-    pairB_T_count = 0
-    pairC_T_count = 0
-    direct_b = True
-    direct_c = False
+            '''Проверка на одинаковые треугольники в словаре triangle_dict'''
+            с1 = 0
+            for trikey in triangle_dict:
+                for trikey2 in triangle_dict:
+                    if trikey == trikey2:
+                        continue
+                    parsed_stroke = trikey.split('-')
+                    symA = parsed_stroke[1]
+                    symB = parsed_stroke[2]
+                    symC = parsed_stroke[3]
+                    parsed_stroke2 = trikey2.split('-')
+                    if symA in parsed_stroke2 and symB in parsed_stroke2 and symC in parsed_stroke2:
+                        print('есть одинаковые')
+                        num1 = int(triangle_dict[trikey]['Number'])
+                        num2 = int(triangle_dict[trikey2]['Number'])
+                        с1 += 1
+                        print( 'одинаковые',parsed_stroke2, с1, num1, num2)
+            print(f'Обнаружено {c1} одинаковых треугольников.')
+            '''Возвращаем словарь triangle_dict вида 1699-USTC-FDUSD-USDT {'PairA': 'USTC/FDUSD', 'PairB': 'FDUSD/USDT', 'PairC': 'USTC/USDT', 'Number': 1699}'''
+            '''И возвращаем список пар get_all_pairs_list участвующих в треугольниках '''
+            return triangle_dict, get_all_pairs_list
 
-    for pair in markets:
-        market = markets[pair]
-        '''get_all_pair_data_list - список всех данных пар рынка: id, symbol, baseId, quoteId'''
-        '''Добавим условие - только спотовый рынок'''
-        if market['active']:
-            # if spot and market['type'] != 'spot':
-            #     continue
-            get_all_pair_data_list.append([market['id'], market['symbol'], market['base'], market['quote'], market['precision'], market['limits']])
-            '''Получим все неповторяющиеся символы с биржи'''
-            get_all_symbols.add(market['base'])
-            get_all_symbols.add(market['quote'])
-            '''Получим все неповторяющиеся пары с биржи'''
-            get_all_pairs.add(market['symbol'])
+        except ccxt.NetworkError as e:
+            print(f"Ошибка сети: {e}")
+            print(f"Повторная попытка через {retry_delay} секунд.")
+            time.sleep(retry_delay)
 
-    duration_get_market_by_time = round((time.time() - current_unix_time)*1000, 2)
-    current_unix_time = time.time()
-    pair_b = ''
-    pair_c = ''
-    pair_a = ''
-    for pair_a_data in get_all_pair_data_list: # Цикл по всем доступным парам. Берем любую доступную пару и ищем треугольник
-        direct_a = True
-        for symbolC in get_all_symbols: # К пробной паре прикручиваем символ из доступных
-            """Пробуем добавить к паре символ С"""
-            if symbolC in pair_a_data:  # Если символ совпадает с символом пары, то пропускаем итерацию
-                continue
-            if symbolC not in pair_a_data:  # Если такого символа в паре нет, значит будет третьим
-                pair_a = pair_a_data[1]
-                '''Ищем вычисленные пары на рынке. Составляем пары a/b b/c c/a'''
-                """Ищем не инверсную пару B, если пара В прямая и идет через котируемый символ..."""
-                if (pair_a_data[3] + '/' + symbolC) in get_all_pairs:
-                    if (pair_a_data[2] + '/' + symbolC) in get_all_pairs:
-                        pair_b = (pair_a_data[3] + '/' + symbolC)
-                        pair_c = (pair_a_data[2] + '/' + symbolC)
-                        tri_name = pair_a_data[1] + '/' + symbolC
-                        pair_dict = {
-                            'PairA': pair_a,
-                            'dirA': direct_a,
-                            'PairB': pair_b,
-                            'dirB': direct_b,
-                            'PairC': pair_c,
-                            'dirC': direct_c
-                        }
-                        triangle_dict[tri_name] = pair_dict
-                        pairB_T_count += 1
-                    '''Если пара В прямая, то пара С Должна быть инверсной через базовый символ'''
-                '''Если пара В прямая и идет через базовый символ'''
-                if (symbolC + '/' + pair_a_data[2]) in get_all_pairs:
-                    if (symbolC + '/' + pair_a_data[3]) in get_all_pairs:
-                        pair_b = (symbolC + '/' + pair_a_data[2])
-                        pair_c = (symbolC + '/' + pair_a_data[3])
-                        tri_name = pair_a_data[1] + '/' + symbolC
-                        pair_dict = {
-                            'PairA': pair_a,
-                            'dirA': direct_a,
-                            'PairB': pair_b,
-                            'dirB': direct_b,
-                            'PairC': pair_c,
-                            'dirC': direct_c
-                        }
-                        triangle_dict[tri_name] = pair_dict
-                        pairB_T_count += 1
-                    '''И если пара В прямая, то пара С Должна быть инверсная, через котируемый символ'''
-                else:  # Если такой пары нет - пропускаем
-                    continue
-
-                get_tri_only_pair.update([pair_a, pair_b, pair_c])
-
-
-    duration_constructor_by_time = round((time.time() - current_unix_time)*1000, 2)
-    if log:
-        print('Биржа:', exchange)
-        print('Пары в треугольниках', get_tri_only_pair)
-        print("Всего", len(get_all_pair_data_list), 'активных пар,состоящих из', len(get_all_symbols),
-              'неповторяющихся символов. Затрачено времени:', duration_get_market_by_time, 'мс')
-        print('Количество пар в треугольниках', len(get_tri_only_pair))
-        print('Конструктор треугольников: количество:', len(triangle_dict),
-              ". Затрачено времени:", duration_constructor_by_time, "мс")
-        print('пара B True', pairB_T_count, 'False', pairB_F_count)
-        print('пара C True', pairC_T_count, 'False', pairC_F_count)
-
-    return triangle_dict, get_tri_only_pair
-
+    print(f"Превышено максимальное количество попыток ({max_retries}). Завершение выполнения функции.")
+    return None, None
 
 if __name__ == '__main__':
-    get_triangle('poloniex', log=True)
+    get_triangle('binance', log=True)
