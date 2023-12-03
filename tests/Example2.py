@@ -18,9 +18,9 @@ async def symbol_loop(exchange, symbol):
 
 async def main():
     exchange = ccxt.pro.kucoin({
-        "apiKey": "YOUR_API_KEY",
-        "secret": "YOUR_API_SECRET",
-        "password": "YOUR_API_PASSWORD",
+        "apiKey": "655e1149aa87b00001139c0d",
+        "secret": "2d445845-2ceb-4567-8b0b-bccb01926d81",
+        # "password": "190180",
     })
     symbols = ['KDA/USDT', 'KDA/BTC', 'BTC/USDT']
     loops = [symbol_loop(exchange, symbol) for symbol in symbols]

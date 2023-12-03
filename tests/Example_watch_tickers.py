@@ -5,7 +5,7 @@ import asyncio
 
 
 async def main(loop):
-    exchange = ccxtpro.poloniex({'enableRateLimit': True, 'asyncio_loop': loop, "type": "future", 'newUpdates': False})
+    exchange = ccxtpro.binance({'enableRateLimit': True, 'asyncio_loop': loop, "type": "future", 'newUpdates': False})
     pair = ['DCR/BTC', 'AKRO/USDT', 'KUB/USDT', 'JUV/USDT', 'ETHW/USDD']
 
     if exchange.has['watchTickers']:
@@ -33,10 +33,5 @@ async def main(loop):
         raise Exception('exchange does not support watchTickers')
     await exchange.close()
 exchange_info = ccxtpro.binance()
-# for key, volue in exchange_info.has.items():
-#     print(key,volue)
-# for key, value in exchange_info().items():
-#     print('nxknvxncvx')
-#     print("info",key, value)
 loop = asyncio.new_event_loop()
 loop.run_until_complete(main(loop))

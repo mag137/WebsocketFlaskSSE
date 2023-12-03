@@ -13,9 +13,9 @@ def get_triangle(exchange, spot=True, log=True, max_retries=3, retry_delay=1):  
             triangle_dict           = {}    # Основной словарь для собираемых треугольников
             get_all_pair_data_list  = []    # Список содержащий свойства одной пары рынка
             get_all_symbols_set     = set() # Множество содержащее все доступные символы
-            get_all_pairs_list      = []    # Список содержащий все доступные пары
             get_all_pairs_set       = set() # Множество содержащее все доступные пары
             get_tri_only_pair_set   = set() # Множество содержащее пары только треугольников
+            get_tri_only_pair_list  = []    # Список содержащий пары только треугольников
             _exchange = getattr(ccxt, str(exchange))()  # Динамическое создание экземпляра биржи
             markets = _exchange.load_markets()  # Загрузка доступных рынков
             current_unix_time = time.time()
@@ -37,7 +37,7 @@ def get_triangle(exchange, spot=True, log=True, max_retries=3, retry_delay=1):  
                     get_all_symbols_set.add(market['quote'])
                     '''Получим все неповторяющиеся пары с биржи'''
                     get_all_pairs_set.add(market['symbol'])
-                    get_all_pairs_list = list(get_all_pairs_set)
+
             for pair_a_data in get_all_pair_data_list: # Цикл по всем доступным парам. Берем любую доступную пару и ищем треугольник
                 for symbolC in get_all_symbols_set: # К пробной паре прикручиваем символ из доступных
                     """Пробуем добавить к паре символ С"""
@@ -64,6 +64,7 @@ def get_triangle(exchange, spot=True, log=True, max_retries=3, retry_delay=1):  
                     get_tri_only_pair_set.update([pair_a, pair_b, pair_c])
             current_unix_time = time.time()
             duration_constructor_by_time = round((time.time() - current_unix_time)*1000, 2)
+            get_tri_only_pair_list = list(get_tri_only_pair_set)
             if log:
                 print('Биржа:', exchange)
                 for key, value in triangle_dict.items():
@@ -94,7 +95,8 @@ def get_triangle(exchange, spot=True, log=True, max_retries=3, retry_delay=1):  
             print(f'Обнаружено {c1} одинаковых треугольников.')
             '''Возвращаем словарь triangle_dict вида 1699-USTC-FDUSD-USDT {'PairA': 'USTC/FDUSD', 'PairB': 'FDUSD/USDT', 'PairC': 'USTC/USDT', 'Number': 1699}'''
             '''И возвращаем список пар get_all_pairs_list участвующих в треугольниках '''
-            return triangle_dict, get_all_pairs_list
+
+            return triangle_dict, get_tri_only_pair_list
 
         except ccxt.NetworkError as e:
             print(f"Ошибка сети: {e}")

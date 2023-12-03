@@ -1,6 +1,7 @@
 import ccxt.pro as ccxt
 import asyncio
-
+import logging
+logging.basicConfig(level=logging.DEBUG)
 orderbooks = {}
 
 def when_orderbook_changed(exchange_spot, symbol, orderbook):
