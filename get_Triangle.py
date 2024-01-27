@@ -7,7 +7,8 @@ file_path = __file__
 file_name = os.path.basename(file_path)
 print("Имя текущего файла:", file_name)
 
-"""Функция получения всех инструментов, доступных на целевой бирже"""
+"""Основная функция получения всех инструментов, доступных на целевой бирже"""
+'''Для заполнения словарей статическими данными'''
 
 
 def get_triangle(exchange, spot=True, log=True, max_retries=3, retry_delay=1):
